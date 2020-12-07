@@ -41,8 +41,10 @@
 (def ship-width 10)
 (def ship-height 20)
 (def ship-speed 10)
-(def ship-rotation-speed 10)
+(def ship-rotation-speed 15)
 (def ship-rotation-degrees (r/atom 0))
+(def ship-velocity-x (r/atom 0))
+(def ship-velocity-y (r/atom 0))
 (def ship-position-x (r/atom 100))
 (def ship-position-y (r/atom 100))
 (def ship-directions {left-arrow -1
@@ -56,8 +58,10 @@
         right (if (key-pressed? right-arrow) 1 0)
         up (if (key-pressed? up-arrow) 1 0)]
     (swap! ship-rotation-degrees + (* (+ left right) ship-rotation-speed delta))
-    (swap! ship-position-x + (* (.sin js/Math (to-radians @ship-rotation-degrees)) up ship-speed delta))
-    (swap! ship-position-y + (* (.cos js/Math (to-radians @ship-rotation-degrees)) -1 up ship-speed delta))
+    (swap! ship-velocity-x + (* (.sin js/Math (to-radians @ship-rotation-degrees)) up (/ ship-speed 20) delta))
+    (swap! ship-velocity-y + (* (.cos js/Math (to-radians @ship-rotation-degrees)) -1 up (/ ship-speed 20) delta))
+    (swap! ship-position-x + (* @ship-velocity-x delta))
+    (swap! ship-position-y + (* @ship-velocity-y delta))
     ))
   
 (defn draw-ship []
@@ -94,8 +98,12 @@
 (.requestAnimationFrame js/window frame)
 
 (defn asteroids []
-  [:canvas
-   {:id "asteroids"
-    :width "500"
-    :height "500"
-    :style {:border "1px solid black"}}])
+  [:<>
+   [:ul
+    [:li "Ship Velocity X: "@ship-velocity-x]
+    [:li "Ship Velocity Y: "@ship-velocity-y]]
+   [:canvas
+    {:id "asteroids"
+     :width "500"
+     :height "500"
+     :style {:border "1px solid black"}}]])
