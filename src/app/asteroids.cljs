@@ -37,6 +37,10 @@
 
 (def square-position (r/atom 10))
 
+;; GAME
+(def screen-width 500)
+(def screen-height 500)
+
 ;; SHIP
 (def ship-width 10)
 (def ship-height 20)
@@ -45,13 +49,19 @@
 (def ship-rotation-degrees (r/atom 0))
 (def ship-velocity-x (r/atom 0))
 (def ship-velocity-y (r/atom 0))
-(def ship-position-x (r/atom 100))
-(def ship-position-y (r/atom 100))
+(def ship-position-x (r/atom (/ screen-width 2)))
+(def ship-position-y (r/atom (/ screen-height 2)))
 (def ship-directions {left-arrow -1
                       right-arrow 1})
 
 (defn to-radians [degrees]
   (/ (* degrees (.. js/Math -PI)) 180))
+
+(defn clamp-wrap [val min max]
+  (cond
+   (< val min) max
+   (> val max) min
+   :else val))
 
 (defn update-ship [delta]
   (let [left (if (key-pressed? left-arrow) -1 0)
@@ -62,6 +72,10 @@
     (swap! ship-velocity-y + (* (.cos js/Math (to-radians @ship-rotation-degrees)) -1 up (/ ship-speed 20) delta))
     (swap! ship-position-x + (* @ship-velocity-x delta))
     (swap! ship-position-y + (* @ship-velocity-y delta))
+    (swap! ship-position-x 
+           (fn [v] (clamp-wrap v (- 0 ship-width) (+ screen-width ship-width))))
+    (swap! ship-position-y 
+           (fn [v] (clamp-wrap v (- 0 ship-width) (+ screen-height ship-width))))
     ))
   
 (defn draw-ship []
@@ -75,9 +89,9 @@
 ;; GAME LOOP
 
 (defn draw []
-  (.clearRect (view) 0 0 500 500)
+  (.clearRect (view) 0 0 screen-width screen-height)
   (draw-ship)
-  (fill-rect (view) [@square-position 10 50 50] black))
+  )
 
 (defn timestamp []
   ((.. js/window -performance -now)))
@@ -104,6 +118,6 @@
     [:li "Ship Velocity Y: "@ship-velocity-y]]
    [:canvas
     {:id "asteroids"
-     :width "500"
-     :height "500"
+     :width screen-width
+     :height screen-height
      :style {:border "1px solid black"}}]])
