@@ -1,7 +1,7 @@
 (ns app.hello
   (:require [reagent.core :as r]
             [app.todo-list :refer [todo-list]]
-            [app.asteroids :refer [asteroids]]))
+            [app.asteroids :refer [asteroids-game]]))
 
 (def click-count (r/atom 0))
 
@@ -25,4 +25,4 @@
    [:p "Here's an example of using a component with state:"]
    [click-counter click-count]
    [todo-list]
-   [asteroids]])
+   [asteroids-game]])

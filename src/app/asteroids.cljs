@@ -35,8 +35,6 @@
   (set! (. view -fillStyle) color)
   (.fillRect view x y width height))
 
-(def square-position (r/atom 10))
-
 ;; GAME
 (def screen-width 500)
 (def screen-height 500)
@@ -85,12 +83,66 @@
   (fill-rect (view) [(* -1 (/ ship-width 2)) (* -1 (/ ship-height 2)) ship-width ship-height] black)
   (.restore (view)))
 
+;; ASTEROIDS
+(defn hit-ship? [asteroid]
+  (let [a-top-left [(- (:position-x asteroid) (/ (:size asteroid) 2))
+                    (- (:position-y asteroid) (/ (:size asteroid) 2))]
+        a-bottom-right [(+ (:position-x asteroid) (/ (:size asteroid) 2))
+                        (+ (:position-y asteroid) (/ (:size asteroid) 2))]
+        s-top-left [(- @ship-position-x (/ ship-width 2))
+                    (- @ship-position-y (/ ship-height 2))]
+        s-bottom-right [(+ @ship-position-x (/ ship-width 2))
+                        (+ @ship-position-y (/ ship-height 2))]]
+    (not (or (> (a-top-left 0) (s-bottom-right 0))
+             (< (a-bottom-right 0) (s-top-left 0))
+             (> (a-top-left 1) (s-bottom-right 1))
+             (< (a-bottom-right 1) (s-top-left 1))))))
+
+(def asteroids (r/atom {
+                        :1 {:id 1
+                            :size 50
+                            :position-x 26 :position-y 26
+                            :velocity-x 1 :velocity-y 1.5
+                            :rotation-degrees 0
+                            :rotation-speed 0.1 }
+                        :2 {:id 2
+                            :size 30
+                            :position-x 450 :position-y 450
+                            :velocity-x -0.5 :velocity-y 0.3
+                            :rotation-degrees 0
+                            :rotation-speed -0.3}}))
+
+(update-in @asteroids [:1 :size] (fn [] 5))
+(swap! asteroids update-in [:1 :size] (fn [] 50))
+
+(defn update-asteroids [delta]
+  (doseq [[id asteroid] @asteroids]
+    (swap! asteroids update-in [id :rotation-degrees] 
+           (fn [rot] (+ rot (* (:rotation-speed asteroid delta)))))
+    (swap! asteroids update-in [id :position-x] 
+           (fn [x] (+ x (* (:velocity-x asteroid) delta))))
+    (swap! asteroids update-in [id :position-y] 
+           (fn [x] (+ x (* (:velocity-y asteroid) delta))))
+    (swap! asteroids update-in [id :position-x]
+           (fn [v] (clamp-wrap v (- 0 (:size asteroid)) (+ screen-width (:size asteroid)))))
+    (swap! asteroids update-in [id :position-y]
+           (fn [v] (clamp-wrap v (- 0 (:size asteroid)) (+ screen-height (:size asteroid)))))))
+ 
+(defn draw-asteroids []
+  (doseq [[id asteroid] @asteroids] 
+    (.save (view))
+    (.translate (view) (:position-x asteroid) (:position-y asteroid))
+    (.rotate (view) (to-radians (:rotation-degrees asteroid)))
+    (fill-rect (view) [(* -1 (/ (:size asteroid) 2)) (* -1 (/ (:size asteroid) 2)) (:size asteroid) (:size asteroid)] black)
+    (.restore (view))))
+
 
 ;; GAME LOOP
 
 (defn draw []
   (.clearRect (view) 0 0 screen-width screen-height)
   (draw-ship)
+  (draw-asteroids)
   )
 
 (defn timestamp []
@@ -100,7 +152,8 @@
 
 (defn update-state [delta]
   (update-ship delta)
-  (swap! square-position + (* 1 delta)))
+  (update-asteroids delta)
+  )
 
 (defn frame []
   (let [delta (- (timestamp) @last-render)]
@@ -111,11 +164,13 @@
 
 (.requestAnimationFrame js/window frame)
 
-(defn asteroids []
+(defn asteroids-game []
   [:<>
    [:ul
     [:li "Ship Velocity X: "@ship-velocity-x]
-    [:li "Ship Velocity Y: "@ship-velocity-y]]
+    [:li "Ship Velocity Y: "@ship-velocity-y]
+    [:li "Hit Asteroid 1 : " (when (hit-ship? (:1 @asteroids)) "YES")]
+    [:li "Hit Asteroid 2 : " (when (hit-ship? (:2 @asteroids)) "YES")]]
    [:canvas
     {:id "asteroids"
      :width screen-width
