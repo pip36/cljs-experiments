@@ -1,39 +1,9 @@
-(ns app.asteroids
-  (:require [reagent.core :as r]))
-
-;;CONFIG
-(defn color [r g b]
-  (str "rgb(" r "," g "," b ")"))
-
-(def black (color 0 0 0))
-(def red (color 255 0 0))
-
-;;INPUT HELPERS
-(def up-arrow :38)
-(def down-arrow :40)
-(def left-arrow :37)
-(def right-arrow :39)
-
-(def pressed-keys (r/atom {}))
-
-(defn set-pressed-key [keyCode isPressed]
-  (swap! pressed-keys assoc (keyword (str keyCode)) isPressed))
-
-(defn key-pressed? [key] (= (key @pressed-keys) true))
-
-(set! (. js/window -onkeydown) 
-      (fn [e] (set-pressed-key (. e -keyCode) true)))
-
-(set! (. js/window -onkeyup)
-      (fn [e] (set-pressed-key (. e -keyCode) false)))
-
-(defn view []
-  (let [view (.getElementById js/document "asteroids")]
-   (.getContext view "2d")))
-
-(defn fill-rect [view [x y width height] color]
-  (set! (. view -fillStyle) color)
-  (.fillRect view x y width height))
+(ns app.asteroids.game
+  (:require [reagent.core :as r]
+            [app.asteroids.user-input 
+             :refer [key-pressed? left-arrow right-arrow up-arrow]]
+            [app.asteroids.canvas 
+             :refer [view fill-rect black red]]))
 
 ;; GAME
 (def screen-width 500)
@@ -42,8 +12,8 @@
 ;; SHIP
 (def ship-width 10)
 (def ship-height 20)
-(def ship-speed 10)
-(def ship-rotation-speed 15)
+(def ship-speed 40)
+(def ship-rotation-speed 20)
 (def ship-rotation-degrees (r/atom 0))
 (def ship-velocity-x (r/atom 0))
 (def ship-velocity-y (r/atom 0))

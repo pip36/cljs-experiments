@@ -1,7 +1,7 @@
 (ns app.hello
   (:require [reagent.core :as r]
             [app.todo-list :refer [todo-list]]
-            [app.asteroids :refer [asteroids-game]]))
+            [app.asteroids.game :refer [asteroids-game]]))
 
 (def click-count (r/atom 0))
 
