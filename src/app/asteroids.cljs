@@ -61,6 +61,12 @@
    (> val max) min
    :else val))
 
+(defn clamp [val min max]
+  (cond
+    (< val min) min
+    (> val max) max
+    :else val))
+
 (defn update-ship [delta]
   (let [left (if (key-pressed? left-arrow) -1 0)
         right (if (key-pressed? right-arrow) 1 0)
@@ -80,7 +86,7 @@
   (.save (view))
   (.translate (view) @ship-position-x @ship-position-y)
   (.rotate (view) (to-radians @ship-rotation-degrees))
-  (fill-rect (view) [(* -1 (/ ship-width 2)) (* -1 (/ ship-height 2)) ship-width ship-height] black)
+  (fill-rect (view) [(* -1 (/ ship-width 2)) (* -1 (/ ship-height 2)) ship-width ship-height] red)
   (.restore (view)))
 
 ;; ASTEROIDS
@@ -98,22 +104,26 @@
              (> (a-top-left 1) (s-bottom-right 1))
              (< (a-bottom-right 1) (s-top-left 1))))))
 
-(def asteroids (r/atom {
-                        :1 {:id 1
-                            :size 50
-                            :position-x 26 :position-y 26
-                            :velocity-x 1 :velocity-y 1.5
-                            :rotation-degrees 0
-                            :rotation-speed 0.1 }
-                        :2 {:id 2
-                            :size 30
-                            :position-x 450 :position-y 450
-                            :velocity-x -0.5 :velocity-y 0.3
-                            :rotation-degrees 0
-                            :rotation-speed -0.3}}))
+(def max-asteroid-size 100)
+(def min-asteroid-size 50)
+(def max-asteroid-velocity 10) 
+(def max-asteroid-rotation-speed 0.1)
+(defn random-asteroid []
+  {:id (symbol (str (rand-int 1000000000)))
+   :size (clamp (rand-int max-asteroid-size) 
+                min-asteroid-size max-asteroid-size)
+   :position-x (rand-int screen-width)
+   :position-y (rand-int screen-height)
+   :velocity-x (- max-asteroid-velocity (rand-int (* 2 max-asteroid-velocity)))
+   :velocity-y (- max-asteroid-velocity (rand-int (* 2 max-asteroid-velocity)))
+   :rotation-degrees 0
+   :rotation-speed (- max-asteroid-rotation-speed (rand (* 2 max-asteroid-rotation-speed)))})
 
-(update-in @asteroids [:1 :size] (fn [] 5))
-(swap! asteroids update-in [:1 :size] (fn [] 50))
+(def asteroids (r/atom {:1 (random-asteroid)
+                        :2 (random-asteroid)
+                        :3 (random-asteroid)
+                        :4 (random-asteroid)
+                        :5 (random-asteroid)}))
 
 (defn update-asteroids [delta]
   (doseq [[id asteroid] @asteroids]
